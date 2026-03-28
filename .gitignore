@@ -25,3 +25,7 @@ dist-ssr
 
 # Github
 .github/
+
+# Environment variables
+.env*
+!.env.example

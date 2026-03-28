@@ -55,7 +55,7 @@ function Router({ onFishjamIdChange }: Props) {
             <div className="absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-[#3e1bff]/25 blur-3xl" />
           </div>
 
-          <div className="relative mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 lg:h-full lg:grid-cols-[1.2fr_0.8fr] lg:items-center lg:px-12">
+          <div className="relative mx-auto grid w-full max-w-7xl gap-8 px-6 py-8 lg:h-full lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:px-12">
             <div className="space-y-8">
               <header className="space-y-5">
                 <p className="font-body text-sm uppercase tracking-[0.24em] text-[#acaab0]">
@@ -111,7 +111,7 @@ function Router({ onFishjamIdChange }: Props) {
             </div>
 
             <JoinRoomCard
-              className="w-full lg:justify-self-end lg:max-w-xl"
+              className="w-full lg:justify-self-end lg:max-w-2xl"
               onFishjamIdChange={onFishjamIdChange}
             />
           </div>

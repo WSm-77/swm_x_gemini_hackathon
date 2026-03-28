@@ -165,29 +165,18 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
         </CardHeader>
 
         <CardContent>
-          <div className="grid w-full items-center gap-4">
-            <div className="flex flex-col space-y-1.5">
-              <Label htmlFor="fishjamId" className="text-[#fcf8fe]">
-                Fishjam ID
-              </Label>
+          <div className="grid w-full items-center gap-6">
+            <input type="hidden" {...form.register("fishjamId")} />
 
-              <Input
-                key="fishjamId"
-                {...form.register("fishjamId")}
-                placeholder="Fishjam ID"
-                className="border-0 border-b border-[#48474c]/70 rounded-none bg-[#131317] px-3 text-[#fcf8fe] focus-visible:ring-1 focus-visible:ring-[#a8a4ff]"
-              />
-            </div>
+            <div className="flex flex-col space-y-6">
+              <div className="flex flex-col space-y-2">
+                <Label className="text-[#fcf8fe] text-base">Role</Label>
 
-            <div className="flex flex-row space-x-2">
-              <div className="flex flex-1 flex-col space-y-1.5">
-                <Label className="text-[#fcf8fe]">Role</Label>
-
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Button
                     type="button"
                     variant={isHost ? "default" : "outline"}
-                    className="h-9 flex-1"
+                    className="h-11 flex-1 text-base"
                     onClick={() => setIsHost(true)}
                   >
                     Host
@@ -196,7 +185,7 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
                   <Button
                     type="button"
                     variant={!isHost ? "default" : "outline"}
-                    className="h-9 flex-1"
+                    className="h-11 flex-1 text-base"
                     onClick={() => setIsHost(false)}
                   >
                     Participant
@@ -204,17 +193,17 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
                 </div>
               </div>
 
-              <div className="flex flex-1 flex-col space-y-1.5">
-                <Label htmlFor="roomName" className="text-[#fcf8fe]">
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="roomName" className="text-[#fcf8fe] text-base">
                   Room ID
                 </Label>
 
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   <Input
                     {...form.register("roomName")}
                     placeholder={isHost ? "Generated room ID" : "Paste shared room ID"}
                     readOnly={isHost}
-                    className="border-0 border-b border-[#48474c]/70 rounded-none bg-[#131317] px-3 text-[#fcf8fe] focus-visible:ring-1 focus-visible:ring-[#a8a4ff]"
+                    className="border-0 border-b border-[#48474c]/70 rounded-none bg-[#131317] px-3 text-[#fcf8fe] h-11 text-base focus-visible:ring-1 focus-visible:ring-[#a8a4ff]"
                   />
 
                   {isHost && (
@@ -222,7 +211,7 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-9"
+                        className="h-11 px-6"
                         onClick={() => form.setValue("roomName", generateRoomId())}
                       >
                         New
@@ -231,7 +220,7 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
                       <Button
                         type="button"
                         variant="outline"
-                        className="h-9"
+                        className="h-11 px-6"
                         onClick={onCopyRoomId}
                       >
                         Copy
@@ -241,15 +230,15 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
                 </div>
               </div>
 
-              <div className="flex flex-1 flex-col space-y-1.5">
-                <Label htmlFor="peerName" className="text-[#fcf8fe]">
+              <div className="flex flex-col space-y-2">
+                <Label htmlFor="peerName" className="text-[#fcf8fe] text-base">
                   User name
                 </Label>
 
                 <Input
                   {...form.register("peerName")}
                   placeholder="Your name"
-                  className="border-0 border-b border-[#48474c]/70 rounded-none bg-[#131317] px-3 text-[#fcf8fe] focus-visible:ring-1 focus-visible:ring-[#a8a4ff]"
+                  className="border-0 border-b border-[#48474c]/70 rounded-none bg-[#131317] px-3 text-[#fcf8fe] h-11 text-base focus-visible:ring-1 focus-visible:ring-[#a8a4ff]"
                 />
               </div>
             </div>
