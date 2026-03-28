@@ -1,0 +1,11 @@
+# Python cache/artifacts
+__pycache__/
+*.pyc
+
+# Local virtual environments
+.venv/
+
+# Local secrets and auth tokens
+.env
+credentials.json
+token.json
