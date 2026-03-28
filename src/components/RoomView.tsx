@@ -84,17 +84,23 @@ export const RoomView = () => {
     let isIntentionalClose = false;
     let socket: WebSocket | undefined;
     let reconnectTimer: number | undefined;
+    let reconnectAttempt = 0;
 
     const connect = () => {
       if (isDisposed) return;
 
       isIntentionalClose = false;
+      console.info(
+        `[AI notes] Opening websocket connection to ${NOTES_WS_URL} (attempt ${reconnectAttempt + 1})`,
+      );
 
       setAiNotesStatus("connecting");
       socket = new WebSocket(NOTES_WS_URL);
 
       socket.onopen = () => {
+        reconnectAttempt = 0;
         setAiNotesStatus("connected");
+        console.info("[AI notes] Websocket connected");
       };
 
       socket.onmessage = (event) => {
@@ -124,7 +130,7 @@ export const RoomView = () => {
       socket.onerror = () => {
         if (isDisposed || isIntentionalClose) return;
         setAiNotesStatus("disconnected");
-        console.warn(`AI notes websocket error for ${NOTES_WS_URL}`);
+        console.warn(`[AI notes] Websocket error for ${NOTES_WS_URL}`);
       };
 
       socket.onclose = (event) => {
@@ -132,10 +138,17 @@ export const RoomView = () => {
 
         setAiNotesStatus("disconnected");
         console.warn(
-          `AI notes websocket closed (${event.code}) ${event.reason || ""}`,
+          `[AI notes] Websocket closed (${event.code}) ${event.reason || ""}`,
         );
 
-        reconnectTimer = window.setTimeout(connect, 2_000);
+        const reconnectDelayMs = reconnectAttempt === 0 ? 2_000 : 10_000;
+        reconnectAttempt += 1;
+
+        console.info(
+          `[AI notes] Reconnecting in ${reconnectDelayMs / 1000}s (retry ${reconnectAttempt})`,
+        );
+
+        reconnectTimer = window.setTimeout(connect, reconnectDelayMs);
       };
     };
 
