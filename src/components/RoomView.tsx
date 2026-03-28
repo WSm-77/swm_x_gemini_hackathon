@@ -2,6 +2,7 @@ import { type PeerId, type Track, usePeers } from "@fishjam-cloud/react-client";
 import { MessageSquareText, Sparkles, Users } from "lucide-react";
 
 import { CallToolbar } from "./CallToolbar";
+import { InteractiveNotes } from "./InteractiveNotes";
 import { Tile } from "./Tile";
 
 export const RoomView = () => {
@@ -133,7 +134,9 @@ export const RoomView = () => {
             </div>
           ) : (
             <div className="grid min-h-[300px] place-items-center rounded-[20px] border border-[#48474c]/40 bg-[#131317]/90 lg:min-h-[420px]">
-              <p className="font-body text-sm text-[#acaab0]">Waiting for participants to join...</p>
+              <p className="font-body text-sm text-[#acaab0]">
+                Waiting for participants to join...
+              </p>
             </div>
           )}
 
@@ -155,6 +158,8 @@ export const RoomView = () => {
         </div>
 
         <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+          <InteractiveNotes />
+
           <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl">
             <div className="mb-3 flex items-center gap-2 text-[#a8a4ff]">
               <MessageSquareText size={16} />
@@ -163,12 +168,22 @@ export const RoomView = () => {
 
             <div className="space-y-3 text-sm">
               <article className="rounded-xl bg-[#25252b] p-3">
-                <p className="font-body text-[#fcf8fe]">Elena R. <span className="text-[#acaab0]">10:42 AM</span></p>
-                <p className="font-body text-[#acaab0]">The new motion guidelines look incredible. Can we review transition curves?</p>
+                <p className="font-body text-[#fcf8fe]">
+                  Elena R. <span className="text-[#acaab0]">10:42 AM</span>
+                </p>
+                <p className="font-body text-[#acaab0]">
+                  The new motion guidelines look incredible. Can we review
+                  transition curves?
+                </p>
               </article>
               <article className="rounded-xl bg-[#25252b] p-3">
-                <p className="font-body text-[#fcf8fe]">Marcus T. <span className="text-[#acaab0]">10:45 AM</span></p>
-                <p className="font-body text-[#acaab0]">Uploaded the latest deck. We should align the ROI narrative before client Q&A.</p>
+                <p className="font-body text-[#fcf8fe]">
+                  Marcus T. <span className="text-[#acaab0]">10:45 AM</span>
+                </p>
+                <p className="font-body text-[#acaab0]">
+                  Uploaded the latest deck. We should align the ROI narrative
+                  before client Q&A.
+                </p>
               </article>
             </div>
           </section>
@@ -179,9 +194,15 @@ export const RoomView = () => {
               <h2 className="font-headline text-base">AI Cues</h2>
             </div>
 
-            <ul className="space-y-2 text-sm font-body text-[#acaab0]">
-              <li className="rounded-xl bg-[#25252b] p-3">The client seems hesitant about budget. Clarify expected ROI timeline now.</li>
-              <li className="rounded-xl bg-[#25252b] p-3">Strong engagement on automation. Ask a follow-up about rollout milestones.</li>
+            <ul className="font-body space-y-2 text-sm text-[#acaab0]">
+              <li className="rounded-xl bg-[#25252b] p-3">
+                The client seems hesitant about budget. Clarify expected ROI
+                timeline now.
+              </li>
+              <li className="rounded-xl bg-[#25252b] p-3">
+                Strong engagement on automation. Ask a follow-up about rollout
+                milestones.
+              </li>
             </ul>
           </section>
         </aside>

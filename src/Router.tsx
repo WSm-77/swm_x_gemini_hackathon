@@ -66,9 +66,10 @@ function Router({ onFishjamIdChange }: Props) {
                   Where Ideas Ignite
                 </h1>
 
-                <p className="max-w-2xl font-body text-base text-[#acaab0] sm:text-lg">
-                  Collaborate in a high-fidelity workspace designed for modern business calls. Crystal clear audio,
-                  immersive video, and AI productivity assistance that moves with your meeting.
+                <p className="font-body max-w-2xl text-base text-[#acaab0] sm:text-lg">
+                  Collaborate in a high-fidelity workspace designed for modern
+                  business calls. Crystal clear audio, immersive video, and AI
+                  productivity assistance that moves with your meeting.
                 </p>
 
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#48474c]/40 bg-[#25252b]/60 px-4 py-2 text-sm text-[#a8a4ff] backdrop-blur-md">
@@ -84,7 +85,7 @@ function Router({ onFishjamIdChange }: Props) {
                     className="rounded-3xl bg-[#131317]/80 p-4 backdrop-blur-md"
                   >
                     <Icon className="mb-3 text-[#a8a4ff]" size={18} />
-                    <h2 className="mb-2 font-headline text-base text-[#fcf8fe]">
+                    <h2 className="font-headline mb-2 text-base text-[#fcf8fe]">
                       {title}
                     </h2>
                     <p className="font-body text-sm text-[#acaab0]">{body}</p>
@@ -102,7 +103,10 @@ function Router({ onFishjamIdChange }: Props) {
 
                 <ul className="grid gap-2 text-sm text-[#fcf8fe] sm:grid-cols-2">
                   {capabilities.map((item) => (
-                    <li key={item} className="rounded-xl bg-[#19191e] px-3 py-2 font-body">
+                    <li
+                      key={item}
+                      className="font-body rounded-xl bg-[#19191e] px-3 py-2"
+                    >
                       {item}
                     </li>
                   ))}
@@ -111,7 +115,7 @@ function Router({ onFishjamIdChange }: Props) {
             </div>
 
             <JoinRoomCard
-              className="w-full lg:justify-self-end lg:max-w-2xl"
+              className="w-full lg:max-w-xl lg:justify-self-end"
               onFishjamIdChange={onFishjamIdChange}
             />
           </div>

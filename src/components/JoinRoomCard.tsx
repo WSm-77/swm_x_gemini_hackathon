@@ -188,7 +188,9 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
             Configure room details and connect to your team workspace.
           </CardDescription>
           {error && (
-            <CardFooter className="px-0 pb-0 text-[#ff6e84]">{error}</CardFooter>
+            <CardFooter className="px-0 pb-0 text-[#ff6e84]">
+              {error}
+            </CardFooter>
           )}
         </CardHeader>
 
@@ -338,7 +340,7 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
           <Button
             disabled={form.formState.isSubmitting}
             type="submit"
-            className="w-36 rounded-full bg-gradient-to-r from-[#a8a4ff] to-[#9995ff] font-body text-[#1e009f] shadow-[0_10px_30px_rgba(102,91,255,0.35)] transition-transform hover:scale-[1.02] hover:brightness-110"
+            className="font-body w-36 rounded-full bg-gradient-to-r from-[#a8a4ff] to-[#9995ff] text-[#1e009f] shadow-[0_10px_30px_rgba(102,91,255,0.35)] transition-transform hover:scale-[1.02] hover:brightness-110"
           >
             {form.formState.isSubmitting ? (
               <Loader2 className="animate-spin" />
