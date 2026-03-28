@@ -49,7 +49,8 @@ export const CallToolbar = () => {
   };
 
   const MicIcon = !isMicrophoneMuted ? Mic : MicOff;
-  const CameraIcon = !isCameraOn ? Video : VideoOff;
+  // CameraIcon: pokazuje VideoOff tylko gdy kamera jest wyłączona
+  const CameraIcon = isCameraOn ? Video : VideoOff;
   const ScreenshareIcon = screenStream ? MonitorOff : MonitorUp;
 
   const toggleScreenShare = async () => {
