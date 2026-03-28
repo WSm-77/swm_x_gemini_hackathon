@@ -7,12 +7,10 @@ Install dependencies with `npm install`, run with `npm run dev`.
 ## Environment Setup
 
 1. Create a `.env` file in the project root.
-2. Add your Fishjam ID and the scribe service URL:
+2. Add your Fishjam ID:
 
 ```bash
 VITE_FISHJAM_ID=your_fishjam_id
-VITE_SCRIBE_SERVICE_URL=http://localhost:8787
-VITE_SCRIBE_NOTES_WS_URL=ws://localhost:8787/ws/notes
 ```
 
 ## Documentation

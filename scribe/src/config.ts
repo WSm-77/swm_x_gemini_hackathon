@@ -10,12 +10,6 @@ const readRequired = (name: string): string => {
   return value;
 };
 
-const readOptional = (name: string): string | undefined => {
-  const value = process.env[name];
-  if (!value) return undefined;
-  return value;
-};
-
 export type ScribeConfig = {
   gemini: {
     apiKey: string;
@@ -25,31 +19,28 @@ export type ScribeConfig = {
   fishjam: {
     fishjamId: string;
     managementToken: string;
-    defaultRoomId?: string;
+    roomId: string;
     subscribeMode: "auto" | "manual";
   };
-  control: {
-    host: string;
-    port: number;
+  phoenix: {
+    wsUrl: string;
+    topic: string;
+    event: string;
   };
 };
 
 export const loadConfig = (): ScribeConfig => {
   const geminiApiKey = readRequired("GEMINI_API_KEY");
+  const phoenixWsUrl = readRequired("PHOENIX_WS_URL");
   const fishjamId = readRequired("FISHJAM_ID");
   const managementToken = readRequired("FISHJAM_MANAGEMENT_TOKEN");
+  const roomId = readRequired("FISHJAM_ROOM_ID");
 
   const subscribeMode = process.env.FISHJAM_AGENT_SUBSCRIBE_MODE ?? "auto";
   if (subscribeMode !== "auto" && subscribeMode !== "manual") {
     throw new Error(
       "Environment variable FISHJAM_AGENT_SUBSCRIBE_MODE must be auto or manual",
     );
-  }
-
-  const controlPortValue = process.env.SCRIBE_CONTROL_PORT ?? "8787";
-  const parsedControlPort = Number.parseInt(controlPortValue, 10);
-  if (Number.isNaN(parsedControlPort) || parsedControlPort <= 0) {
-    throw new Error("Environment variable SCRIBE_CONTROL_PORT must be a positive integer");
   }
 
   return {
@@ -61,11 +52,13 @@ export const loadConfig = (): ScribeConfig => {
     fishjam: {
       fishjamId,
       managementToken,
+      roomId,
       subscribeMode,
     },
-    control: {
-      host: process.env.SCRIBE_CONTROL_HOST ?? "0.0.0.0",
-      port: parsedControlPort,
+    phoenix: {
+      wsUrl: phoenixWsUrl,
+      topic: process.env.PHOENIX_TOPIC ?? "scribe:global",
+      event: process.env.PHOENIX_EVENT ?? "save_note_item",
     },
   };
 };
