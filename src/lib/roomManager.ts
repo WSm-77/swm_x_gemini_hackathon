@@ -24,3 +24,23 @@ export const getRoomCredentials = async (
 
   return res.data;
 };
+
+export const deleteRoom = async (
+  fishjamUrl: string,
+  roomName: string,
+  adminToken: string,
+) => {
+  try {
+    const deleteUrl = new URL(fishjamUrl);
+    deleteUrl.pathname = `/api/rooms/${roomName}`;
+
+    await axios.delete(deleteUrl.toString(), {
+      headers: {
+        Authorization: `Bearer ${adminToken}`,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to delete room:", error);
+    // Don't throw - room deletion failure shouldn't crash the app
+  }
+};

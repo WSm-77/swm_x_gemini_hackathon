@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 import { DEFAULT_FISHJAM_ID } from "@/lib/consts";
 import { getPersistedFormValues, persistFormValues } from "@/lib/utils";
+import { useRoom } from "@/context/RoomContext";
 import type { RoomForm } from "@/types";
 
 import { CameraSettings, MicrophoneSettings } from "./DeviceSettings";
@@ -48,6 +49,7 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
   const { initializeDevices } = useInitializeDevices();
 
   const { joinRoom } = useConnection();
+  const { setRoomName } = useRoom();
 
   const persistedValues = getPersistedFormValues();
 
@@ -161,6 +163,9 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
         peerToken,
         peerMetadata: { displayName: peerName },
       });
+
+      // Store room name in context for later cleanup
+      setRoomName(roomName);
     } catch (error) {
       console.error("Failed to join room:", error);
       form.setError("root", {

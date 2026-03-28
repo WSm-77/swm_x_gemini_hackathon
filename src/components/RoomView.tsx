@@ -1,10 +1,13 @@
-import { type PeerId, type Track, usePeers } from "@fishjam-cloud/react-client";
+import { type PeerId, type Track, useConnection, usePeers } from "@fishjam-cloud/react-client";
 import { ChevronLeft, ChevronRight, MessageSquareText, Sparkles, Users } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import { CallToolbar } from "./CallToolbar";
 import { InteractiveNotes } from "./InteractiveNotes";
 import { Tile } from "./Tile";
+import { useRoom } from "@/context/RoomContext";
+import { deleteRoom } from "@/lib/roomManager";
+import { DEFAULT_FISHJAM_ID } from "@/lib/consts";
 
 const CAMERAS_PER_PAGE = 4;
 
