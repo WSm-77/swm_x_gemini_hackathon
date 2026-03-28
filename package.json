@@ -16,6 +16,7 @@
   "dependencies": {
     "@fishjam-cloud/js-server-sdk": "^0.25.1",
     "@fishjam-cloud/react-client": "0.25.1",
+    "@google/genai": "^1.27.0",
     "@mediapipe/tasks-vision": "^0.10.21",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-aspect-ratio": "^1.1.1",
@@ -44,6 +45,7 @@
     "@types/node": "^22.14.0",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.0",
+    "@types/ws": "^8.5.14",
     "@vitejs/plugin-react-swc": "^3.8.1",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.0.0",

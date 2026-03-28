@@ -1,4 +1,4 @@
-import WebSocket from "ws";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 import { saveNoteItemToolDeclaration } from "../schemas/saveNoteItemSchema";
 import type { GeminiFunctionCall } from "../types";
@@ -8,7 +8,6 @@ const PCM_MIME_TYPE = "audio/pcm;rate=16000";
 
 type GeminiLiveClientOptions = {
   apiKey: string;
-  wsUrl: string;
   model: string;
   onFunctionCall: (call: GeminiFunctionCall) => void;
 };
@@ -30,36 +29,60 @@ type GeminiServerMessage = {
 };
 
 export class GeminiLiveClient {
-  private ws?: WebSocket;
+  private session?: {
+    sendRealtimeInput: (payload: {
+      mediaChunks: Array<{ mimeType: string; data: string }>;
+    }) => void;
+    close: () => void;
+  };
+  private pendingResolve?: () => void;
+  private pendingReject?: (error: unknown) => void;
 
   public constructor(private readonly options: GeminiLiveClientOptions) {}
 
   public async connect(): Promise<void> {
-    const fullUrl = `${this.options.wsUrl}?key=${encodeURIComponent(this.options.apiKey)}`;
+    const ai = new GoogleGenAI({ apiKey: this.options.apiKey });
 
-    await new Promise<void>((resolve, reject) => {
-      const ws = new WebSocket(fullUrl);
-      this.ws = ws;
-
-      ws.on("open", () => {
-        this.sendSetup();
+    let settled = false;
+    const connected = new Promise<void>((resolve, reject) => {
+      this.pendingResolve = () => {
+        if (settled) return;
+        settled = true;
         resolve();
-      });
-
-      ws.on("message", (data, isBinary) => {
-        if (isBinary) return;
-        this.handleMessage(data.toString());
-      });
-
-      ws.on("error", (error) => {
+      };
+      this.pendingReject = (error: unknown) => {
+        if (settled) return;
+        settled = true;
         reject(error);
-      });
-
-      ws.on("close", (code, reasonBuffer) => {
-        const reason = reasonBuffer.toString("utf8");
-        console.warn(`Gemini websocket closed (${code}) ${reason}`);
-      });
+      };
     });
+
+    const session = await ai.live.connect({
+      model: this.options.model,
+      config: {
+        responseModalities: [Modality.AUDIO],
+        tools: [{ functionDeclarations: [saveNoteItemToolDeclaration] }],
+      },
+      callbacks: {
+        onopen: () => {
+          console.debug("Gemini live session opened");
+          this.pendingResolve?.();
+        },
+        onmessage: (message) => {
+          this.handleMessage(message as GeminiServerMessage);
+        },
+        onerror: (error) => {
+          this.pendingReject?.(error);
+          console.error("Gemini live client error", error);
+        },
+        onclose: (event) => {
+          console.warn(`Gemini websocket closed ${event.reason ?? ""}`);
+        },
+      },
+    });
+
+    this.session = session as typeof this.session;
+    await connected;
   }
 
   public async streamPcm(source: AsyncIterable<Buffer>): Promise<void> {
@@ -72,53 +95,19 @@ export class GeminiLiveClient {
   }
 
   public close(): void {
-    this.ws?.close(1000, "Scribe shutdown");
-  }
-
-  private sendSetup(): void {
-    this.sendJson({
-      setup: {
-        model: this.options.model,
-        generationConfig: {
-          responseModalities: ["TEXT"],
-        },
-        tools: [
-          {
-            functionDeclarations: [saveNoteItemToolDeclaration],
-          },
-        ],
-      },
-    });
+    this.session?.close();
   }
 
   private sendRealtimeAudioChunk(chunk: Buffer): void {
-    this.sendJson({
-      realtimeInput: {
-        mediaChunks: [
-          {
-            mimeType: PCM_MIME_TYPE,
-            data: chunk.toString("base64"),
-          },
-        ],
-      },
+    this.session?.sendRealtimeInput({
+      mediaChunks: [
+        { mimeType: PCM_MIME_TYPE, data: chunk.toString("base64") },
+      ],
     });
   }
 
-  private sendJson(payload: unknown): void {
-    const ws = this.ws;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
-    ws.send(JSON.stringify(payload));
-  }
-
-  private handleMessage(raw: string): void {
-    let parsed: GeminiServerMessage;
-    try {
-      parsed = JSON.parse(raw) as GeminiServerMessage;
-    } catch (_error) {
-      return;
-    }
-
-    const functionCalls = this.extractFunctionCalls(parsed);
+  private handleMessage(message: GeminiServerMessage): void {
+    const functionCalls = this.extractFunctionCalls(message);
     for (const call of functionCalls) {
       if (call.name !== "save_note_item") continue;
       this.options.onFunctionCall(call);

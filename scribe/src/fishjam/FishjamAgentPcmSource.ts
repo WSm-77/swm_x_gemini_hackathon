@@ -59,16 +59,18 @@ export class FishjamAgentPcmSource {
       },
     } satisfies AgentCallbacks;
 
-const rooms = await this.fishjamClient.getAllRooms();
-    const room = rooms[0]
+    console.log("Connecting to FishJam...");
 
-    console.log("Created FishJam room", room.id, room);
+    const rooms = await this.fishjamClient.getAllRooms();
+    const room = rooms[0];
 
     const { agent } = await this.fishjamClient.createAgent(
       room.id,
       agentOptions,
       callbacks,
     );
+
+    console.log("Connected to FishJam, waiting for audio data...");
 
     this.agent = agent as FishjamAgent;
 

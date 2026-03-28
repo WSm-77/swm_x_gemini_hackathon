@@ -42,8 +42,6 @@ const parseSaveNoteItemArgs = (value: unknown): SaveNoteItemArgs | null => {
 const run = async (): Promise<void> => {
   const config = loadConfig();
 
-
-
   const fishjamAgent = new FishjamAgentPcmSource({
     fishjamId: config.fishjam.fishjamId,
     managementToken: config.fishjam.managementToken,
@@ -58,7 +56,6 @@ const run = async (): Promise<void> => {
 
   const gemini = new GeminiLiveClient({
     apiKey: config.gemini.apiKey,
-    wsUrl: config.gemini.wsUrl,
     model: config.gemini.model,
     onFunctionCall: (call) => {
       const parsed = parseSaveNoteItemArgs(call.args);
@@ -66,8 +63,6 @@ const run = async (): Promise<void> => {
         console.warn("Received invalid save_note_item args", call.args);
         return;
       }
-
-      console.log(config);
 
       const payload: SaveNoteItemPayload = {
         ...parsed,
@@ -81,8 +76,6 @@ const run = async (): Promise<void> => {
       console.debug("Broadcasted note item", payload);
     },
   });
-
-console.log(config);    
 
   await fishjamAgent.start();
   // await phoenix.connect();

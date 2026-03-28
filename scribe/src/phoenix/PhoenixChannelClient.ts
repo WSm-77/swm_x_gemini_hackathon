@@ -37,7 +37,7 @@ export class PhoenixChannelClient {
         resolve();
       });
 
-      ws.on("error", (error) => {
+      ws.on("error", (error: Error) => {
         reject(error);
       });
 
