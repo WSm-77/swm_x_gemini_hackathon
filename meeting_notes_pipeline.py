@@ -69,15 +69,15 @@ def generate_meeting_markdown(transcript_text: str, shorthand_notes: str) -> str
     client = genai.Client(api_key=api_key)
 
     prompt = f"""
-Combine this transcript and these shorthand notes into a professional meeting summary.
-Use Markdown headers for Overview, Decisions, and Action Items.
+        Combine this transcript and these shorthand notes into a professional meeting summary.
+        Use Markdown headers for Overview, Decisions, and Action Items.
 
-Transcript:
-{transcript_text}
+        Transcript:
+        {transcript_text}
 
-User shorthand notes:
-{shorthand_notes}
-""".strip()
+        User shorthand notes:
+        {shorthand_notes}
+    """.strip()
 
     # for m in client.models.list():
     #     print(m.name)
