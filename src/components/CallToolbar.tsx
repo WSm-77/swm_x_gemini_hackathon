@@ -7,6 +7,7 @@ import {
 import {
   Mic,
   MicOff,
+  MessageSquareText,
   MonitorOff,
   MonitorUp,
   PhoneOff,
@@ -21,7 +22,14 @@ import { getPersistedFormValues } from "@/lib/utils";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button } from "./ui/button";
 
-export const CallToolbar = () => {
+type CallToolbarProps = {
+  asideToggle?: {
+    isOpen: boolean;
+    onToggle: () => void;
+  };
+};
+
+export const CallToolbar = ({ asideToggle }: CallToolbarProps) => {
   const { leaveRoom } = useConnection();
 
   const {
@@ -142,6 +150,17 @@ export const CallToolbar = () => {
         >
           <ScreenshareIcon size={20} strokeWidth={"1.5px"} />
         </Button>
+
+        {asideToggle && (
+          <Button
+            className={asideToggle.isOpen ? activeControlClass : controlClass}
+            variant="ghost"
+            onClick={asideToggle.onToggle}
+            title={asideToggle.isOpen ? "Hide side panel" : "Show side panel"}
+          >
+            <MessageSquareText size={20} strokeWidth={"1.5px"} />
+          </Button>
+        )}
 
         <Button
           className="h-11 gap-2 rounded-full bg-[#ff6e84] px-4 text-xs font-semibold text-[#490013] hover:bg-[#ff8396]"

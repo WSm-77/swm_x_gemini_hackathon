@@ -1,15 +1,12 @@
-import { type PeerId, type Track, useConnection, usePeers } from "@fishjam-cloud/react-client";
+import { type PeerId, type Track, usePeers } from "@fishjam-cloud/react-client";
 import { ChevronLeft, ChevronRight, MessageSquareText, Sparkles, Users } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { SCRIBE_SERVICE_URL } from "@/lib/consts";
 import { getPersistedFormValues } from "@/lib/utils";
 import { CallToolbar } from "./CallToolbar";
 import { InteractiveNotes } from "./InteractiveNotes";
 import { Tile } from "./Tile";
-import { useRoom } from "@/context/RoomContext";
-import { deleteRoom } from "@/lib/roomManager";
-import { DEFAULT_FISHJAM_ID } from "@/lib/consts";
 
 const CAMERAS_PER_PAGE = 4;
 
@@ -180,6 +177,7 @@ export const RoomView = () => {
     };
   }, [roomId]);
   const [currentPage, setCurrentPage] = useState(0);
+  const [isAsideOpen, setIsAsideOpen] = useState(true);
 
   // Detect if anyone is streaming
   const remoteStreamingPeer = useMemo(() => {
@@ -327,16 +325,22 @@ export const RoomView = () => {
           <h1 className="font-headline text-2xl leading-none">Project Sync</h1>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full bg-[#25252b]/80 px-4 py-2 text-sm text-[#a8a4ff]">
-          <span className="h-2 w-2 rounded-full bg-[#a8a4ff]" />
-          LIVE
-          <span className="mx-1 text-[#48474c]">|</span>
-          <Users size={16} />
-          {participantCount} Participants active
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full bg-[#25252b]/80 px-4 py-2 text-sm text-[#a8a4ff]">
+            <span className="h-2 w-2 rounded-full bg-[#a8a4ff]" />
+            LIVE
+            <span className="mx-1 text-[#48474c]">|</span>
+            <Users size={16} />
+            {participantCount} Participants active
+          </div>
         </div>
       </header>
 
-      <section className="relative grid flex-1 gap-4 overflow-y-auto px-4 pb-28 pt-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-6">
+      <section
+        className={`relative grid flex-1 gap-4 overflow-y-auto px-4 pb-28 pt-4 lg:px-6 ${
+          isAsideOpen ? "lg:grid-cols-[minmax(0,1fr)_360px]" : "lg:grid-cols-[minmax(0,1fr)]"
+        }`}
+      >
         <div className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-4">
           {/* MAIN SPOTLIGHT AREA */}
           {spotlightTile ? (
@@ -467,7 +471,8 @@ export const RoomView = () => {
           )}
         </div>
 
-        <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+        {isAsideOpen && (
+          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
           <InteractiveNotes />
 
           <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl">
@@ -535,10 +540,16 @@ export const RoomView = () => {
               </div>
             )}
           </section>
-        </aside>
+          </aside>
+        )}
       </section>
 
-      <CallToolbar />
+      <CallToolbar
+        asideToggle={{
+          isOpen: isAsideOpen,
+          onToggle: () => setIsAsideOpen((prev) => !prev),
+        }}
+      />
     </div>
   );
 };
