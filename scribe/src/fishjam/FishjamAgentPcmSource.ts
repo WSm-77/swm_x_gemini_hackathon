@@ -4,6 +4,7 @@ import {
   type AgentCallbacks,
   FishjamClient,
   type PeerOptions,
+  RoomId,
 } from "@fishjam-cloud/js-server-sdk";
 
 type AgentPcmChunkEvent = {
@@ -39,6 +40,13 @@ export class FishjamAgentPcmSource {
       fishjamId: this.options.fishjamId,
       managementToken: this.options.managementToken,
     });
+    // this.reset();
+  }
+  public async reset(){
+        const rooms = await this.fishjamClient.getAllRooms();
+        for (const room of rooms) {
+          this.fishjamClient.deleteRoom(room.id);
+        }
   }
 
   public async start(): Promise<void> {
@@ -59,28 +67,12 @@ export class FishjamAgentPcmSource {
       },
     } satisfies AgentCallbacks;
 
-    const requestedRoomId = this.options.roomId.trim();
-    const rooms = await this.fishjamClient.getAllRooms();
-    const room = rooms.find((candidate) => candidate.id === requestedRoomId);
+    console.log(`Connecting FishJam agent to room ${this.options.roomId} with subscribe mode ${agentOptions.subscribeMode}...`);
 
-    let targetRoomId = room?.id;
-    if (!targetRoomId && rooms.length > 0) {
-      targetRoomId = rooms[0].id;
-      console.warn(
-        `FishJam room ${requestedRoomId} was not found or is not accessible; using accessible room ${targetRoomId}`,
-      );
-    }
 
-    if (!targetRoomId) {
-      const createdRoom = await this.fishjamClient.createRoom();
-      targetRoomId = createdRoom.id;
-      console.warn(
-        `FishJam room ${requestedRoomId} was not found and no rooms were accessible; created room ${targetRoomId}`,
-      );
-    }
 
     const { agent } = await this.fishjamClient.createAgent(
-      targetRoomId,
+      this.options.roomId as RoomId,
       agentOptions,
       callbacks,
     );
@@ -95,7 +87,7 @@ export class FishjamAgentPcmSource {
     });
 
     console.debug(
-      `FishJam agent connected to room ${targetRoomId} with 16kHz PCM output`,
+      `FishJam agent connected to room ${this.options.roomId} with 16kHz PCM output`,
     );
   }
 

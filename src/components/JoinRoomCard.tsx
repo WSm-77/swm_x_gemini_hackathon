@@ -11,6 +11,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { DEFAULT_FISHJAM_ID } from "@/lib/consts";
+import { joinScribeSession } from "@/lib/scribeService";
 import { getPersistedFormValues, persistFormValues } from "@/lib/utils";
 import type { RoomForm } from "@/types";
 
@@ -161,6 +162,19 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
         peerToken,
         peerMetadata: { displayName: peerName },
       });
+
+      try {
+        await joinScribeSession();
+      } catch (error) {
+        console.error("Failed to start scribe session:", error);
+        toast.warning("Joined the room, but could not start scribe agent", {
+          position: "top-center",
+          description:
+            error instanceof Error
+              ? error.message
+              : "Check scribe service availability",
+        });
+      }
     } catch (error) {
       console.error("Failed to join room:", error);
       form.setError("root", {

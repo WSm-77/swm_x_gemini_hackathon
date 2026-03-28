@@ -138,9 +138,8 @@ export const InteractiveNotes = () => {
     publishData(encoder.encode(JSON.stringify(message)), { reliable: true });
   }, [dataChannelReady, localPeerId, publishData, roomId]);
 
-  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newNotes = e.target.value;
-    setNotes(newNotes);
+    const newNotes = slateValueToNotes(value);
+    setNotesText(newNotes);
 
     if (!dataChannelReady) return;
 
