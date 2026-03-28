@@ -1,86 +1,171 @@
-import { usePeers } from "@fishjam-cloud/react-client";
-import { Edit3, Lock, Unlock, Users } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useDataChannel, usePeers } from "@fishjam-cloud/react-client";
+import { Edit3, Users } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+import { getPersistedFormValues } from "@/lib/utils";
+
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+type NotesSyncMessage = {
+  type: "notes-sync";
+  roomId: string;
+  notes: string;
+  fromPeerId: string;
+  fromDisplayName: string;
+  revision: number;
+};
+
+type NotesSyncRequestMessage = {
+  type: "notes-sync-request";
+  roomId: string;
+  fromPeerId: string;
+};
+
+type NotesMessage = NotesSyncMessage | NotesSyncRequestMessage;
+
+const parseMessage = (payload: Uint8Array): NotesMessage | null => {
+  try {
+    const parsed = JSON.parse(decoder.decode(payload)) as NotesMessage;
+    if (!parsed || typeof parsed !== "object" || !("type" in parsed)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+};
 
 export const InteractiveNotes = () => {
   const { localPeer, remotePeers } = usePeers<{ displayName: string }>();
+  const {
+    initializeDataChannel,
+    publishData,
+    subscribeData,
+    dataChannelReady,
+  } = useDataChannel();
   const [notes, setNotes] = useState("");
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockedBy, setLockedBy] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>("");
+  const [syncStatus, setSyncStatus] = useState<"local" | "syncing" | "live">(
+    "local",
+  );
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const revisionRef = useRef<number>(0);
+  const debounceTimerRef = useRef<number | null>(null);
 
   const localPeerId = localPeer?.id || "";
   const localDisplayName = localPeer?.metadata?.peer?.displayName || "You";
-  const canEdit = !isLocked || lockedBy === localPeerId;
+  const roomId = useMemo(
+    () => getPersistedFormValues().roomName || "global-room",
+    [],
+  );
 
-  // Set up data channel for real-time sync
+  // Initialize Fishjam data channels once we are in a room.
   useEffect(() => {
-    if (!localPeer) return;
+    if (!localPeer) {
+      setSyncStatus("local");
+      return;
+    }
+    void initializeDataChannel();
+  }, [initializeDataChannel, localPeer]);
 
-    // Create a broadcast channel for notes synchronization
-    const channel = new BroadcastChannel(`notes-${localPeer.id}`);
+  useEffect(() => {
+    if (dataChannelReady) {
+      setSyncStatus("live");
+    }
+  }, [dataChannelReady]);
 
-    const handleMessage = (event: MessageEvent) => {
-      const data = event.data;
+  const publishNotes = (nextNotes: string) => {
+    if (!localPeerId || !dataChannelReady) return;
 
-      if (data.type === "notes-update") {
-        setNotes(data.notes);
-        setLastUpdate(data.from);
-      } else if (data.type === "lock-toggle") {
-        setIsLocked(data.locked);
-        setLockedBy(data.locked ? data.peerId : null);
-      }
+    const revision = Date.now();
+    revisionRef.current = revision;
+
+    const message: NotesSyncMessage = {
+      type: "notes-sync",
+      roomId,
+      notes: nextNotes,
+      fromPeerId: localPeerId,
+      fromDisplayName: localDisplayName,
+      revision,
     };
 
-    channel.addEventListener("message", handleMessage);
+    publishData(encoder.encode(JSON.stringify(message)), { reliable: true });
+    setSyncStatus("live");
+  };
 
-    return () => {
-      channel.close();
+  useEffect(() => {
+    if (!localPeerId) return;
+
+    const unsubscribe = subscribeData(
+      (payload) => {
+        const message = parseMessage(payload);
+        if (!message || message.roomId !== roomId) return;
+
+        if (message.type === "notes-sync") {
+          if (message.fromPeerId === localPeerId) return;
+          if (message.revision <= revisionRef.current) return;
+
+          revisionRef.current = message.revision;
+          setNotes(message.notes);
+          setLastUpdate(message.fromDisplayName);
+          setSyncStatus("live");
+          return;
+        }
+
+        if (message.type === "notes-sync-request") {
+          if (message.fromPeerId === localPeerId) return;
+          if (!notes.trim()) return;
+          publishNotes(notes);
+        }
+      },
+      { reliable: true },
+    );
+
+    return unsubscribe;
+  }, [dataChannelReady, localPeerId, notes, publishData, roomId, subscribeData]);
+
+  // Ask existing participants for latest snapshot after connecting.
+  useEffect(() => {
+    if (!dataChannelReady || !localPeerId) return;
+
+    const message: NotesSyncRequestMessage = {
+      type: "notes-sync-request",
+      roomId,
+      fromPeerId: localPeerId,
     };
-  }, [localPeer]);
+
+    publishData(encoder.encode(JSON.stringify(message)), { reliable: true });
+  }, [dataChannelReady, localPeerId, publishData, roomId]);
 
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newNotes = e.target.value;
     setNotes(newNotes);
 
-    // Broadcast the update to other peers
-    if (localPeer) {
-      const channel = new BroadcastChannel(`notes-${localPeer.id}`);
-      channel.postMessage({
-        type: "notes-update",
-        notes: newNotes,
-        from: localDisplayName,
-        timestamp: Date.now(),
-      });
-      channel.close();
+    if (!dataChannelReady) return;
+
+    setSyncStatus("syncing");
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
     }
+    debounceTimerRef.current = window.setTimeout(() => {
+      publishNotes(newNotes);
+    }, 120);
   };
 
-  const toggleLock = () => {
-    const newLockedState = !isLocked;
-    setIsLocked(newLockedState);
-    setLockedBy(newLockedState ? localPeerId : null);
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        window.clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
-    // Broadcast lock state
-    if (localPeer) {
-      const channel = new BroadcastChannel(`notes-${localPeer.id}`);
-      channel.postMessage({
-        type: "lock-toggle",
-        locked: newLockedState,
-        peerId: localPeerId,
-        displayName: localDisplayName,
-      });
-      channel.close();
-    }
-  };
-
-  const getLockStatus = () => {
-    if (!isLocked) return "Collaborative mode";
-    if (lockedBy === localPeerId) return "Locked by you";
-    const lockerPeer = remotePeers.find((p) => p.id === lockedBy);
-    const lockerName = lockerPeer?.metadata?.peer?.displayName || "Someone";
-    return `Locked by ${lockerName}`;
+  const getSyncStatusText = () => {
+    if (!localPeer) return "Local mode";
+    if (syncStatus === "syncing") return "Syncing...";
+    if (syncStatus === "live") return "Live collaboration";
+    return "Connected (waiting for data channel)";
   };
 
   return (
@@ -90,28 +175,14 @@ export const InteractiveNotes = () => {
           <Edit3 size={16} />
           <h2 className="font-headline text-base">Collaborative Notes</h2>
         </div>
-        <button
-          onClick={toggleLock}
-          className="flex items-center gap-1.5 rounded-lg bg-[#25252b] px-2 py-1 text-xs transition-colors hover:bg-[#2d2d34]"
-          title={isLocked ? "Unlock notes" : "Lock notes (take control)"}
-        >
-          {isLocked ? (
-            <>
-              <Lock size={12} className="text-yellow-400" />
-              <span className="text-[#acaab0]">Unlock</span>
-            </>
-          ) : (
-            <>
-              <Unlock size={12} className="text-green-400" />
-              <span className="text-[#acaab0]">Lock</span>
-            </>
-          )}
-        </button>
+        <span className="rounded-lg bg-[#25252b] px-2 py-1 text-xs text-[#acaab0]">
+          {getSyncStatusText()}
+        </span>
       </div>
 
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs text-[#acaab0]">
-          <span>{getLockStatus()}</span>
+          <span>Everyone can edit at the same time</span>
           {lastUpdate && (
             <span className="text-[#8b8990]">Last edit: {lastUpdate}</span>
           )}
@@ -121,13 +192,8 @@ export const InteractiveNotes = () => {
           ref={textareaRef}
           value={notes}
           onChange={handleNotesChange}
-          disabled={!canEdit}
-          placeholder={
-            canEdit
-              ? "Start typing your notes here..."
-              : "Notes are locked by another user"
-          }
-          className="font-body h-64 w-full resize-none rounded-xl bg-[#25252b] p-3 text-sm text-[#fcf8fe] placeholder:text-[#6b6a70] focus:outline-none focus:ring-2 focus:ring-[#ffd6a8]/30 disabled:cursor-not-allowed disabled:opacity-50"
+          placeholder="Start typing your notes here..."
+          className="font-body h-64 w-full resize-none rounded-xl bg-[#25252b] p-3 text-sm text-[#fcf8fe] placeholder:text-[#6b6a70] focus:outline-none focus:ring-2 focus:ring-[#ffd6a8]/30"
         />
 
         <div className="flex items-center gap-2 text-xs text-[#8b8990]">

@@ -170,8 +170,8 @@ export class GeminiLiveClient {
         outputAudioTranscription: {},
         systemInstruction: {
           role: "system",
-          parts: [{ text: FACTCHECK_SYSEM_INSTRUCTION }],
-          // parts: [{ text: SCRIBE_SYSTEM_INSTRUCTION }],
+          // parts: [{ text: FACTCHECK_SYSEM_INSTRUCTION }],
+          parts: [{ text: SCRIBE_SYSTEM_INSTRUCTION }],
         },
       },
       callbacks: {
