@@ -13,8 +13,11 @@ import {
   Settings,
   Video,
   VideoOff,
+  UserPlus,
 } from "lucide-react";
+import { toast } from "sonner";
 
+import { getPersistedFormValues } from "@/lib/utils";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button } from "./ui/button";
 
@@ -64,6 +67,32 @@ export const CallToolbar = () => {
     }
   };
 
+  const onInvite = async () => {
+    const persistedValues = getPersistedFormValues();
+    const roomId = persistedValues.roomName;
+
+    if (!roomId) {
+      toast.error("No room ID available to share", {
+        position: "top-center",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(roomId);
+      toast.success("Room ID copied! Share it with others to join.", {
+        position: "top-center",
+        description: (
+          <span className="font-mono text-sm text-black">{roomId}</span>
+        ),
+      });
+    } catch {
+      toast.error("Could not copy room ID", {
+        position: "top-center"
+      });
+    }
+  };
+
   const controlClass =
     "h-11 w-11 rounded-full border border-[#48474c]/50 bg-[#25252b]/80 text-[#fcf8fe] shadow-none hover:bg-[#2c2b32]";
 
@@ -80,6 +109,15 @@ export const CallToolbar = () => {
             </div>
           </Button>
         </SettingsSheet>
+
+        <Button
+          className="h-11 w-11 rounded-full border border-[#48474c]/50 bg-[#25252b]/80 text-[#a8a4ff] shadow-none hover:bg-[#2c2b32] hover:text-[#a8a4ff]"
+          variant="ghost"
+          onClick={onInvite}
+          title="Invite participants"
+        >
+          <UserPlus size={20} strokeWidth={"1.5px"} />
+        </Button>
 
         <Button
           className={!isMicrophoneMuted && isMicrophoneOn ? activeControlClass : controlClass}
