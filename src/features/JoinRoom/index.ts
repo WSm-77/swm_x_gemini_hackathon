@@ -1,0 +1,1 @@
+export { JoinRoomCard } from "./JoinRoomCard";
