@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useDataChannel } from "@fishjam-cloud/react-client";
+import { useEffect, useRef, useState } from "react";
 
 import { SCRIBE_SERVICE_URL } from "@/lib/consts";
 
@@ -12,26 +13,62 @@ type ScribeNotePayload = {
 };
 
 const MAX_AI_NOTES = 8;
+const DATA_CHANNEL_OPTIONS = { reliable: true } as const;
 
-const buildNotesWsUrl = (): string => {
+type DataChannelNoteMessage = {
+  type: "ai_note_text";
+  roomId?: string;
+  text: string;
+  timestamp: string;
+  source?: "scribe_ws" | "fishjam_data";
+};
+
+const textEncoder = new TextEncoder();
+const textDecoder = new TextDecoder();
+
+const getNoteFingerprint = ({
+  roomId,
+  text,
+  timestamp,
+}: {
+  roomId?: string;
+  text: string;
+  timestamp: string;
+}): string => `${roomId ?? ""}|${timestamp}|${text}`;
+
+const buildNotesWsUrl = (roomId: string | null): string => {
   const explicitUrl = import.meta.env.VITE_SCRIBE_NOTES_WS_URL;
   if (typeof explicitUrl === "string" && explicitUrl.trim().length > 0) {
-    return explicitUrl.trim();
+    try {
+      const parsed = new URL(explicitUrl.trim());
+      if (roomId) {
+        parsed.searchParams.set("roomId", roomId);
+      } else {
+        parsed.searchParams.delete("roomId");
+      }
+      return parsed.toString();
+    } catch {
+      return explicitUrl.trim();
+    }
   }
 
   try {
     const serviceUrl = new URL(SCRIBE_SERVICE_URL);
     serviceUrl.protocol = serviceUrl.protocol === "https:" ? "wss:" : "ws:";
     serviceUrl.pathname = "/ws/notes";
-    serviceUrl.search = "";
+    if (roomId) {
+      serviceUrl.searchParams.set("roomId", roomId);
+    } else {
+      serviceUrl.search = "";
+    }
     serviceUrl.hash = "";
     return serviceUrl.toString();
   } catch {
-    return "ws://localhost:8787/ws/notes";
+    return roomId
+      ? `ws://localhost:8787/ws/notes?roomId=${encodeURIComponent(roomId)}`
+      : "ws://localhost:8787/ws/notes";
   }
 };
-
-const NOTES_WS_URL = buildNotesWsUrl();
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -62,10 +99,78 @@ export const toTimeLabel = (isoDate: string): string => {
 };
 
 export const useAiNotesFeed = (roomId: string | null) => {
+  const {
+    initializeDataChannel,
+    dataChannelReady,
+    dataChannelLoading,
+    subscribeData,
+    publishData,
+  } = useDataChannel();
+
   const [aiNotes, setAiNotes] = useState<AiNoteItem[]>([]);
   const [aiNotesStatus, setAiNotesStatus] = useState<
     "connecting" | "connected" | "disconnected"
   >("connecting");
+  const seenNotesRef = useRef<Set<string>>(new Set());
+
+  const addNote = ({ text, timestamp, roomId: messageRoomId }: { text: string; timestamp: string; roomId?: string }) => {
+    const fingerprint = getNoteFingerprint({
+      roomId: messageRoomId,
+      text,
+      timestamp,
+    });
+
+    if (seenNotesRef.current.has(fingerprint)) return;
+    seenNotesRef.current.add(fingerprint);
+
+    setAiNotes((current) => {
+      const next = [
+        {
+          id: crypto.randomUUID(),
+          text,
+          timestamp,
+        },
+        ...current,
+      ].slice(0, MAX_AI_NOTES);
+
+      if (seenNotesRef.current.size > 200) {
+        seenNotesRef.current = new Set(
+          next.map((item) =>
+            getNoteFingerprint({ roomId: messageRoomId, text: item.text, timestamp: item.timestamp }),
+          ),
+        );
+      }
+
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (dataChannelReady || dataChannelLoading) return;
+    initializeDataChannel();
+  }, [dataChannelReady, dataChannelLoading, initializeDataChannel]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeData((data) => {
+      try {
+        const payload = JSON.parse(textDecoder.decode(data)) as unknown;
+        const note = parseScribeNotePayload(payload);
+
+        if (!note) return;
+        if (roomId && note.roomId && note.roomId !== roomId) return;
+
+        const text = note.text?.trim();
+        if (!text) return;
+
+        const timestamp = note.timestamp ?? new Date().toISOString();
+        addNote({ text, timestamp, roomId: note.roomId });
+      } catch {
+        // Ignore malformed data channel payloads.
+      }
+    }, DATA_CHANNEL_OPTIONS);
+
+    return unsubscribe;
+  }, [roomId, subscribeData]);
 
   useEffect(() => {
     let isDisposed = false;
@@ -79,7 +184,8 @@ export const useAiNotesFeed = (roomId: string | null) => {
 
       isIntentionalClose = false;
       setAiNotesStatus("connecting");
-      socket = new WebSocket(NOTES_WS_URL);
+      const notesWsUrl = buildNotesWsUrl(roomId);
+      socket = new WebSocket(notesWsUrl);
 
       socket.onopen = () => {
         reconnectAttempt = 0;
@@ -98,13 +204,21 @@ export const useAiNotesFeed = (roomId: string | null) => {
           if (!text) return;
 
           const timestamp = payload.timestamp ?? new Date().toISOString();
-          const nextItem: AiNoteItem = {
-            id: crypto.randomUUID(),
-            text,
-            timestamp,
-          };
+          addNote({ text, timestamp, roomId: payload.roomId });
 
-          setAiNotes((current) => [nextItem, ...current].slice(0, MAX_AI_NOTES));
+          if (dataChannelReady) {
+            const message: DataChannelNoteMessage = {
+              type: "ai_note_text",
+              roomId: payload.roomId,
+              text,
+              timestamp,
+              source: "scribe_ws",
+            };
+            publishData(
+              textEncoder.encode(JSON.stringify(message)),
+              DATA_CHANNEL_OPTIONS,
+            );
+          }
         } catch {
           // Ignore malformed websocket payloads.
         }
@@ -151,7 +265,7 @@ export const useAiNotesFeed = (roomId: string | null) => {
         }
       }
     };
-  }, [roomId]);
+  }, [roomId, dataChannelReady, publishData]);
 
   return { aiNotes, aiNotesStatus };
 };
