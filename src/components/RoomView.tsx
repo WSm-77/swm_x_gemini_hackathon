@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { SCRIBE_SERVICE_URL } from "@/lib/consts";
-import { ScribeServiceUnavailableError, inviteAgents } from "@/lib/scribeService";
+import { ScribeServiceUnavailableError, inviteAgents } from "@/services/scribeService";
 import { useRoom } from "@/context/RoomContext";
-import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types";
+import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types/agents";
 import { CallToolbar } from "./CallToolbar";
 import { InteractiveNotes } from "./InteractiveNotes";
 import { Tile } from "./Tile";

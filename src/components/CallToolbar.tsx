@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
 import { useRoom } from "@/context/RoomContext";
-import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types";
+import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types/agents";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button } from "./ui/button";
 import {

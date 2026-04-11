@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { DEFAULT_FISHJAM_ID } from "@/lib/consts";
 import { getPersistedFormValues, persistFormValues } from "@/lib/utils";
 import { useRoom } from "@/context/RoomContext";
-import { getRoomCredentials } from "@/lib/roomManager";
-import type { RoomForm } from "@/types";
+import { getRoomCredentials } from "@/services/roomManager";
+import type { RoomForm } from "@/types/room";
 
 import { CameraSettings, MicrophoneSettings } from "./DeviceSettings";
 import {

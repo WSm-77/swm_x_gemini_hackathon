@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-import type { RoomForm } from "@/types";
+import type { RoomForm } from "@/types/room";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
