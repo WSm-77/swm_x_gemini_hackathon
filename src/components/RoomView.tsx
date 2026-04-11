@@ -1,8 +1,11 @@
 import { type PeerId, type Track, usePeers } from "@fishjam-cloud/react-client";
 import { ChevronLeft, ChevronRight, MessageSquareText, Sparkles, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { SCRIBE_SERVICE_URL } from "@/lib/consts";
+import { ScribeServiceUnavailableError, inviteAgents } from "@/lib/scribeService";
+import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types";
 import { getPersistedFormValues } from "@/lib/utils";
 import { CallToolbar } from "./CallToolbar";
 import { InteractiveNotes } from "./InteractiveNotes";
@@ -310,6 +313,39 @@ export const RoomView = () => {
 
   const participantCount = (localPeer ? 1 : 0) + remotePeers.length;
 
+  const onInviteAgents = async (agentIds: InvitableAgentId[]) => {
+    try {
+      const invited = await inviteAgents(agentIds);
+      const invitedLabel = invited
+        .map((id) => INVITABLE_AGENTS.find((agent) => agent.id === id)?.label ?? id)
+        .join(", ");
+
+      toast.success(
+        invited.length === 1 ? "Agent invited" : `Invited ${invited.length} agents`,
+        {
+          position: "top-center",
+          description: invitedLabel,
+        },
+      );
+    } catch (error) {
+      if (error instanceof ScribeServiceUnavailableError) {
+        toast.error("Could not invite agents", {
+          position: "top-center",
+          description: "Local scribe service is unavailable. Run pnpm scribe:dev and try again.",
+        });
+        return;
+      }
+
+      toast.error("Failed to invite agents", {
+        position: "top-center",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Unexpected error while inviting agents",
+      });
+    }
+  };
+
   return (
     <div className="relative flex h-full w-full flex-col bg-[#0e0e12] text-[#fcf8fe]">
       <div className="pointer-events-none absolute inset-0">
@@ -549,6 +585,7 @@ export const RoomView = () => {
           isOpen: isAsideOpen,
           onToggle: () => setIsAsideOpen((prev) => !prev),
         }}
+        onInviteAgents={onInviteAgents}
       />
     </div>
   );

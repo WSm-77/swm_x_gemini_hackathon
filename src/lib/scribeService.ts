@@ -1,4 +1,5 @@
 import { SCRIBE_SERVICE_URL } from "./consts";
+import { type InvitableAgentId } from "@/types";
 
 const buildScribeUrl = (path: string): string => {
   const base = SCRIBE_SERVICE_URL.endsWith("/")
@@ -8,16 +9,38 @@ const buildScribeUrl = (path: string): string => {
   return `${base}${path}`;
 };
 
+export class ScribeServiceUnavailableError extends Error {
+  public constructor(message = "Local scribe service is unavailable") {
+    super(message);
+    this.name = "ScribeServiceUnavailableError";
+  }
+}
+
+const createUnavailableError = (reason?: string): ScribeServiceUnavailableError => {
+  const suffix = reason ? ` (${reason})` : "";
+  return new ScribeServiceUnavailableError(`Local scribe service is unavailable${suffix}`);
+};
+
 export const joinScribeSession = async (): Promise<void> => {
-  const response = await fetch(buildScribeUrl("/sessions/join"), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({}),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(buildScribeUrl("/sessions/join"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+  } catch {
+    throw createUnavailableError("could not reach control API");
+  }
 
   if (response.ok) return;
+
+  if (response.status >= 500) {
+    throw createUnavailableError(`status ${response.status}`);
+  }
 
   let details = "";
 
@@ -32,4 +55,15 @@ export const joinScribeSession = async (): Promise<void> => {
   throw new Error(
     `Failed to start scribe session (status ${response.status})${suffix}`,
   );
+};
+
+export const inviteAgents = async (
+  selectedAgentIds: InvitableAgentId[],
+): Promise<InvitableAgentId[]> => {
+  const uniqueSelected = Array.from(new Set(selectedAgentIds));
+  if (uniqueSelected.length === 0) return [];
+
+  // Current invite flow is backed by a single scribe session endpoint.
+  await joinScribeSession();
+  return uniqueSelected;
 };
