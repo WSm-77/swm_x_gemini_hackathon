@@ -77,7 +77,7 @@ const toTimeLabel = (isoDate: string): string => {
 };
 
 export const RoomView = () => {
-  const { localPeer, remotePeers } = usePeers<{ displayName: string }>();
+  const { localPeer, remotePeers } = usePeers<{ displayName?: string }>();
   const { roomId } = useRoom();
   const [aiNotes, setAiNotes] = useState<AiNoteItem[]>([]);
   const [aiNotesStatus, setAiNotesStatus] = useState<
@@ -313,7 +313,7 @@ export const RoomView = () => {
 
   const participantCount = (localPeer ? 1 : 0) + remotePeers.length;
 
-  const onInviteAgents = async (agentIds: InvitableAgentId[]) => {
+  const onInviteAgents = async (agentIds: InvitableAgentId[]): Promise<void> => {
     try {
       const invited = await inviteAgents(agentIds, roomId || undefined);
       const invitedLabel = invited

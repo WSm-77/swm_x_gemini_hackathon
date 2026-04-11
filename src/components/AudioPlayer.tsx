@@ -6,7 +6,7 @@ interface AudioPlayerProps {
 }
 
 const AudioPlayer: FC<AudioPlayerProps> = ({ stream }) => {
-  const audioRef = useRef<HTMLVideoElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (!audioRef.current) return;

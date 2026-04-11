@@ -23,7 +23,13 @@ import {
   Operation,
   Transforms,
 } from "slate";
-import { Editable, Slate, withReact } from "slate-react";
+import {
+  Editable,
+  type RenderElementProps,
+  type RenderLeafProps,
+  Slate,
+  withReact,
+} from "slate-react";
 
 type BlockFormat = "paragraph" | "heading-one" | "heading-two";
 type TextAlign = "left" | "center" | "right";
@@ -77,7 +83,7 @@ const isMarkActive = (editor: Editor, format: MarkFormat) => {
   return marks ? marks[format] === true : false;
 };
 
-const toggleMark = (editor: Editor, format: MarkFormat) => {
+const toggleMark = (editor: Editor, format: MarkFormat): void => {
   const active = isMarkActive(editor, format);
   if (active) {
     Editor.removeMark(editor, format);
@@ -90,7 +96,7 @@ const isBlockActive = (
   editor: Editor,
   format: BlockFormat,
   blockKey: "type" | "align" = "type"
-) => {
+): boolean => {
   const [match] = Editor.nodes(editor, {
     match: (node) => {
       if (!SlateElement.isElement(node)) return false;
@@ -101,14 +107,14 @@ const isBlockActive = (
   return !!match;
 };
 
-const isAlignActive = (editor: Editor, align: TextAlign) => {
+const isAlignActive = (editor: Editor, align: TextAlign): boolean => {
   const [match] = Editor.nodes(editor, {
     match: (node) => SlateElement.isElement(node) && node.align === align,
   });
   return !!match;
 };
 
-const toggleBlockType = (editor: Editor, format: BlockFormat) => {
+const toggleBlockType = (editor: Editor, format: BlockFormat): void => {
   const isActive = isBlockActive(editor, format);
   Transforms.setNodes(
     editor,
@@ -117,7 +123,7 @@ const toggleBlockType = (editor: Editor, format: BlockFormat) => {
   );
 };
 
-const toggleAlign = (editor: Editor, align: TextAlign) => {
+const toggleAlign = (editor: Editor, align: TextAlign): void => {
   const isActive = isAlignActive(editor, align);
   Transforms.setNodes(
     editor,
@@ -138,7 +144,7 @@ const slateValueToNotes = (value: Descendant[]): string => {
 };
 
 export const InteractiveNotes = () => {
-  const { localPeer, remotePeers } = usePeers<{ displayName: string }>();
+  const { localPeer, remotePeers } = usePeers<{ displayName?: string }>();
   const [notesText, setNotesText] = useState("");
   const [editorResetKey, setEditorResetKey] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
@@ -146,7 +152,7 @@ export const InteractiveNotes = () => {
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const editor = useMemo(() => withReact(createEditor()), []);
 
-  const renderElement = useCallback(({ attributes, children, element }: any) => {
+  const renderElement = useCallback(({ attributes, children, element }: RenderElementProps) => {
     const style = { textAlign: element.align || "left" } as const;
 
     switch (element.type) {
@@ -179,7 +185,7 @@ export const InteractiveNotes = () => {
     }
   }, []);
 
-  const renderLeaf = useCallback(({ attributes, children, leaf }: any) => {
+  const renderLeaf = useCallback(({ attributes, children, leaf }: RenderLeafProps) => {
     let renderedChildren = children;
     if (leaf.bold) renderedChildren = <strong>{renderedChildren}</strong>;
     if (leaf.italic) renderedChildren = <em>{renderedChildren}</em>;
@@ -239,7 +245,7 @@ export const InteractiveNotes = () => {
     };
   }, [localPeer, localPeerId]);
 
-  const handleNotesChange = (value: Descendant[]) => {
+  const handleNotesChange = (value: Descendant[]): void => {
     const hasDocumentChange = editor.operations.some(
       (operation: Operation) => operation.type !== "set_selection"
     );
@@ -262,7 +268,7 @@ export const InteractiveNotes = () => {
     }
   };
 
-  const toggleLock = () => {
+  const toggleLock = (): void => {
     const newLockedState = !isLocked;
     setIsLocked(newLockedState);
     setLockedBy(newLockedState ? localPeerId : null);
@@ -280,7 +286,7 @@ export const InteractiveNotes = () => {
     }
   };
 
-  const getLockStatus = () => {
+  const getLockStatus = (): string => {
     if (!isLocked) return "Collaborative mode";
     if (lockedBy === localPeerId) return "Locked by you";
     const lockerPeer = remotePeers.find((p) => p.id === lockedBy);
