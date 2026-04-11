@@ -54,6 +54,20 @@ pnpm dev --host
 
 5. Open the provided URL (usually `http://localhost:5170`).
 
+6. Start scribing agent in another terminal:
+
+```bash
+set -a && source .env && set +a && pnpm scribe:dev
+```
+
+7. Join the room from multiple devices and test the experience!
+
+8. After leaving the room delete all rooms with script
+
+```bash
+bun clear.ts
+```
+
 ## Troubleshooting
 
 - Blank room or connection issues:
