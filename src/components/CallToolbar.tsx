@@ -12,6 +12,7 @@ import {
   MonitorUp,
   PhoneOff,
   Settings,
+  Share2,
   Video,
   VideoOff,
   UserPlus,
@@ -20,6 +21,7 @@ import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
 import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types";
+import { getPersistedFormValues } from "@/lib/utils";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button } from "./ui/button";
 import {
@@ -121,6 +123,32 @@ export const CallToolbar = ({ asideToggle, onInviteAgents }: CallToolbarProps) =
     }
   };
 
+  const onShareRoom = async () => {
+    const persistedValues = getPersistedFormValues();
+    const roomId = persistedValues.roomName;
+
+    if (!roomId) {
+      toast.error("No room ID available to share", {
+        position: "top-center",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(roomId);
+      toast.success("Room ID copied! Share it with others to join.", {
+        position: "top-center",
+        description: (
+          <span className="font-mono text-xs text-black text-[#fcf8fe]">{roomId}</span>
+        ),
+      });
+    } catch {
+      toast.error("Could not copy room ID", {
+        position: "top-center",
+      });
+    }
+  };
+
   const controlClass =
     "h-11 w-11 rounded-full border border-[#48474c]/50 bg-[#25252b]/80 text-[#fcf8fe] shadow-none hover:bg-[#2c2b32]";
 
@@ -137,6 +165,15 @@ export const CallToolbar = ({ asideToggle, onInviteAgents }: CallToolbarProps) =
             </div>
           </Button>
         </SettingsSheet>
+
+        <Button
+          className={controlClass}
+          variant="ghost"
+          onClick={onShareRoom}
+          title="Share room ID"
+        >
+          <Share2 size={20} strokeWidth={"1.5px"} />
+        </Button>
 
         <Sheet open={isInviteOpen} onOpenChange={setIsInviteOpen}>
           <SheetTrigger asChild>
