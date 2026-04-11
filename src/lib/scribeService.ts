@@ -21,7 +21,7 @@ const createUnavailableError = (reason?: string): ScribeServiceUnavailableError 
   return new ScribeServiceUnavailableError(`Local scribe service is unavailable${suffix}`);
 };
 
-export const joinScribeSession = async (): Promise<void> => {
+export const joinScribeSession = async (roomId?: string): Promise<void> => {
   let response: Response;
 
   try {
@@ -30,7 +30,7 @@ export const joinScribeSession = async (): Promise<void> => {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({}),
+      body: JSON.stringify(roomId ? { room_id: roomId } : {}),
     });
   } catch {
     throw createUnavailableError("could not reach control API");
@@ -59,11 +59,11 @@ export const joinScribeSession = async (): Promise<void> => {
 
 export const inviteAgents = async (
   selectedAgentIds: InvitableAgentId[],
+  roomId?: string,
 ): Promise<InvitableAgentId[]> => {
   const uniqueSelected = Array.from(new Set(selectedAgentIds));
   if (uniqueSelected.length === 0) return [];
 
-  // Current invite flow is backed by a single scribe session endpoint.
-  await joinScribeSession();
+  await joinScribeSession(roomId);
   return uniqueSelected;
 };

@@ -20,8 +20,8 @@ import {
 import { toast } from "sonner";
 import { useMemo, useState } from "react";
 
+import { useRoom } from "@/context/RoomContext";
 import { INVITABLE_AGENTS, type InvitableAgentId } from "@/types";
-import { getPersistedFormValues } from "@/lib/utils";
 import { SettingsSheet } from "./SettingsSheet";
 import { Button } from "./ui/button";
 import {
@@ -44,6 +44,7 @@ type CallToolbarProps = {
 };
 
 export const CallToolbar = ({ asideToggle, onInviteAgents }: CallToolbarProps) => {
+  const { roomName } = useRoom();
   const { leaveRoom } = useConnection();
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [selectedAgents, setSelectedAgents] = useState<InvitableAgentId[]>([]);
@@ -124,10 +125,7 @@ export const CallToolbar = ({ asideToggle, onInviteAgents }: CallToolbarProps) =
   };
 
   const onShareRoom = async () => {
-    const persistedValues = getPersistedFormValues();
-    const roomId = persistedValues.roomName;
-
-    if (!roomId) {
+    if (!roomName) {
       toast.error("No room ID available to share", {
         position: "top-center",
       });
@@ -135,11 +133,11 @@ export const CallToolbar = ({ asideToggle, onInviteAgents }: CallToolbarProps) =
     }
 
     try {
-      await navigator.clipboard.writeText(roomId);
+      await navigator.clipboard.writeText(roomName);
       toast.success("Room ID copied! Share it with others to join.", {
         position: "top-center",
         description: (
-          <span className="font-mono text-xs text-black text-[#fcf8fe]">{roomId}</span>
+          <span className="font-mono text-xs text-black text-[#fcf8fe]">{roomName}</span>
         ),
       });
     } catch {

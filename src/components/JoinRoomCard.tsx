@@ -1,9 +1,4 @@
-import {
-  type RoomType,
-  useConnection,
-  useInitializeDevices,
-  useSandbox,
-} from "@fishjam-cloud/react-client";
+import { type RoomType, useConnection, useInitializeDevices } from "@fishjam-cloud/react-client";
 import { Loader2, MessageCircleWarning } from "lucide-react";
 import type { FC } from "react";
 import { useCallback, useEffect, useState } from "react";
@@ -11,9 +6,9 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 
 import { DEFAULT_FISHJAM_ID } from "@/lib/consts";
-import { joinScribeSession } from "@/lib/scribeService";
 import { getPersistedFormValues, persistFormValues } from "@/lib/utils";
 import { useRoom } from "@/context/RoomContext";
+import { getRoomCredentials } from "@/lib/roomManager";
 import type { RoomForm } from "@/types";
 
 import { CameraSettings, MicrophoneSettings } from "./DeviceSettings";
@@ -50,7 +45,7 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
   const { initializeDevices } = useInitializeDevices();
 
   const { joinRoom } = useConnection();
-  const { setRoomName } = useRoom();
+  const { setRoomId, setRoomName } = useRoom();
 
   const persistedValues = getPersistedFormValues();
 
@@ -72,7 +67,6 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
     onFishjamIdChange(formFishjamId);
   }, [formFishjamId, onFishjamIdChange]);
 
-  const { getSandboxPeerToken } = useSandbox();
   const [isHost, setIsHost] = useState(true);
 
   const generateRoomId = useCallback(() => {
@@ -151,7 +145,16 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
     }
 
     try {
-      const peerToken = await getSandboxPeerToken(roomName, peerName, roomType);
+      const fishjamUrl = /^https?:\/\//.test(fishjamId)
+        ? new URL(fishjamId).href
+        : `https://fishjam.io/api/v1/connect/${fishjamId}`;
+
+      const { peerToken, room } = await getRoomCredentials(
+        `${fishjamUrl}/room-manager`,
+        roomName,
+        peerName,
+        roomType,
+      );
 
       persistFormValues({
         roomName,
@@ -165,21 +168,9 @@ export const JoinRoomCard: FC<Props> = ({ onFishjamIdChange, ...props }) => {
         peerMetadata: { displayName: peerName },
       });
 
-      try {
-        await joinScribeSession();
-      } catch (error) {
-        console.error("Failed to start scribe session:", error);
-        toast.warning("Joined the room, but could not start scribe agent", {
-          position: "top-center",
-          description:
-            error instanceof Error
-              ? error.message
-              : "Check scribe service availability",
-        });
-      }
-
-      // Store room name in context for later cleanup
+      // Store room details in context for later cleanup and invite flow.
       setRoomName(roomName);
+      setRoomId(room.id);
     } catch (error) {
       console.error("Failed to join room:", error);
       form.setError("root", {
