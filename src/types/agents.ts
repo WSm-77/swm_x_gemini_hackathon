@@ -1,4 +1,4 @@
-export type InvitableAgentId = "scribe" | "actionItems" | "summary";
+export type InvitableAgentId = "scribe" | "factChecker";
 
 export type InvitableAgent = {
   id: InvitableAgentId;
@@ -13,13 +13,8 @@ export const INVITABLE_AGENTS: InvitableAgent[] = [
     description: "Live notes and highlights during the call.",
   },
   {
-    id: "actionItems",
-    label: "Action Items",
-    description: "Tracks owners and follow-ups from discussion points.",
-  },
-  {
-    id: "summary",
-    label: "Summary",
-    description: "Builds concise meeting summaries in real time.",
+    id: "factChecker",
+    label: "Fact Checker",
+    description: "Verifies factual claims in real time.",
   },
 ];

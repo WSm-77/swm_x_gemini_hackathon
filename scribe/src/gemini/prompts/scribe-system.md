@@ -24,12 +24,6 @@ Output format requirements:
 Note structure:
 - Title: Meeting Notes
 - Summary: 2-4 sentences with current meeting direction
-- Decisions
-- Action Items: each with owner (if known) and status
-- Open Questions
-- Risks / Blockers
-- Key Context / Facts
-- Next Steps
 
 Update policy every batch:
 - Add newly confirmed facts.
@@ -40,6 +34,7 @@ Update policy every batch:
 - If no meaningful new information appears, return the same note with minimal wording improvements only.
 
 Quality rules:
+- Be concise and precise.
 - Be factual and avoid hallucinations.
 - Clearly mark uncertainty when information is incomplete.
 - Prefer explicit names, dates, and commitments when stated.
