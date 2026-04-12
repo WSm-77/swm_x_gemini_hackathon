@@ -42,6 +42,9 @@ export const RoomView = () => {
 
     nextReports.forEach((item) => {
       notifiedFactCheckIdsRef.current.add(item.id);
+
+      if (item.verdict !== "refuted") return;
+
       toast(getVerdictLabel(item.verdict), {
         position: "top-center",
         description: "New fact-check report",
