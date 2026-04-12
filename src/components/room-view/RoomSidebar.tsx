@@ -1,30 +1,45 @@
-import { MessageSquareText, Sparkles } from "lucide-react";
+import { Edit3, MessageSquareText, Sparkles, Lock, LockOpen } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { InteractiveNotes } from "@components/InteractiveNotes";
+import { Button } from "@components/ui/button";
 
 import { toTimeLabel } from "./useAiNotesFeed";
 import { type AiNoteItem } from "./types";
+
+export type RoomSidebarTab = "notes" | "chat" | "ai-notes";
 
 type RoomSidebarProps = {
   isOpen: boolean;
   aiNotesStatus: "connecting" | "connected" | "disconnected";
   aiNotes: AiNoteItem[];
+  activeTab: RoomSidebarTab;
+  onTabChange: (tab: RoomSidebarTab) => void;
 };
 
-export const RoomSidebar = ({ isOpen, aiNotesStatus, aiNotes }: RoomSidebarProps) => {
-  if (!isOpen) return null;
+const tabButtonClass =
+  "h-9 rounded-full border px-3 text-xs font-medium shadow-none transition-colors";
 
+const notesTabs: Array<{ id: RoomSidebarTab; label: string }> = [
+  { id: "notes", label: "Collaborative Notes" },
+  { id: "chat", label: "Chat" },
+  { id: "ai-notes", label: "AI Notes" },
+];
+
+const ChatView = () => {
   return (
-    <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-      <InteractiveNotes />
-
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl">
         <div className="mb-3 flex items-center gap-2 text-[#a8a4ff]">
           <MessageSquareText size={16} />
-          <h2 className="font-headline text-base">Team Chat</h2>
+          <h2 className="font-headline text-base">Chat</h2>
         </div>
 
-        <div className="space-y-3 text-sm">
+        <p className="text-xs text-[#8b8990]">Live discussion</p>
+      </section>
+
+      <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="space-y-3 text-sm overflow-x-hidden overflow-y-auto lg:min-h-0 lg:flex-1">
           <article className="rounded-xl bg-[#25252b] p-3">
             <p className="font-body text-[#fcf8fe]">
               Elena R. <span className="text-[#acaab0]">10:42 AM</span>
@@ -45,25 +60,36 @@ export const RoomSidebar = ({ isOpen, aiNotesStatus, aiNotes }: RoomSidebarProps
           </article>
         </div>
       </section>
+    </div>
+  );
+};
+
+const AiNotesView = ({ aiNotesStatus, aiNotes }: Pick<RoomSidebarProps, "aiNotesStatus" | "aiNotes">) => {
+  const statusText = useMemo(() => {
+    if (aiNotesStatus === "connected") return "Live sync enabled";
+    if (aiNotesStatus === "connecting") return "Connecting to notes stream...";
+    return "Disconnected from notes stream";
+  }, [aiNotesStatus]);
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4">
 
       <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl">
         <div className="mb-3 flex items-center gap-2 text-[#8ff5ff]">
           <Sparkles size={16} />
-          <h2 className="font-headline text-base">AI notes</h2>
+          <h2 className="font-headline text-base">AI Notes</h2>
         </div>
 
-        <div className="mb-3 text-xs text-[#8b8990]">
-          {aiNotesStatus === "connected" && "Live sync enabled"}
-          {aiNotesStatus === "connecting" && "Connecting to notes stream..."}
-          {aiNotesStatus === "disconnected" && "Disconnected from notes stream"}
-        </div>
+        <div className="mb-3 text-xs text-[#8b8990]">{statusText}</div>
+      </section>
 
+      <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
         {aiNotes.length === 0 ? (
           <p className="font-body text-sm text-[#acaab0]">
             Waiting for AI notes from scribe...
           </p>
         ) : (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2 overflow-x-hidden overflow-y-auto text-sm lg:min-h-0 lg:flex-1">
             {aiNotes.map((note) => (
               <article key={note.id} className="rounded-xl bg-[#25252b] p-3">
                 <div className="mb-1 flex items-center justify-between gap-2">
@@ -82,6 +108,90 @@ export const RoomSidebar = ({ isOpen, aiNotesStatus, aiNotes }: RoomSidebarProps
             ))}
           </div>
         )}
+      </section>
+    </div>
+  );
+};
+
+const CollaborativeNotesView = () => {
+  const [isLocked, setIsLocked] = useState(false);
+
+  const handleToggleLock = () => {
+    setIsLocked((prev) => !prev);
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[#ffd6a8]">
+            <Edit3 size={16} />
+            <h2 className="font-headline text-base">Collaborative Notes</h2>
+          </div>
+          <button
+            onClick={handleToggleLock}
+            className="rounded-lg p-1.5 text-[#ffd6a8] transition-colors hover:bg-[#25252b]"
+            title={isLocked ? "Unlock notes" : "Lock notes"}
+          >
+            {isLocked ? <Lock size={16} /> : <LockOpen size={16} />}
+          </button>
+        </div>
+
+        <p className="text-xs text-[#8b8990]">
+          {isLocked ? "Locked by you" : "Collaborative mode"}
+        </p>
+      </section>
+
+      <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="overflow-x-hidden overflow-y-auto lg:min-h-0 lg:flex-1">
+          <InteractiveNotes isLocked={isLocked} />
+        </div>
+      </section>
+    </div>
+  );
+};
+
+export const RoomSidebar = ({
+  isOpen,
+  aiNotesStatus,
+  aiNotes,
+  activeTab,
+  onTabChange,
+}: RoomSidebarProps) => {
+  if (!isOpen) return null;
+
+  const activeTabClass =
+    "border-[#a8a4ff]/55 bg-[#3e1bff]/20 text-[#fcf8fe]";
+  const inactiveTabClass = "border-[#48474c]/35 bg-[#25252b]/80 text-[#acaab0]";
+
+  return (
+    <aside className="space-y-4 lg:h-full lg:min-h-0 lg:self-stretch lg:pr-1">
+      <section className="rounded-3xl border border-[#48474c]/35 bg-[#131317]/90 p-4 backdrop-blur-xl lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {notesTabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+
+            return (
+              <Button
+                key={tab.id}
+                className={`${tabButtonClass} ${isActive ? activeTabClass : inactiveTabClass}`}
+                onClick={() => onTabChange(tab.id)}
+                type="button"
+                variant="ghost"
+              >
+                {tab.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        <div className="h-full min-h-0 lg:flex-1">
+          {activeTab === "notes" && <CollaborativeNotesView />}
+          {activeTab === "chat" && <ChatView />}
+          {activeTab === "ai-notes" && (
+            <AiNotesView aiNotesStatus={aiNotesStatus} aiNotes={aiNotes} />
+          )}
+        </div>
       </section>
     </aside>
   );
