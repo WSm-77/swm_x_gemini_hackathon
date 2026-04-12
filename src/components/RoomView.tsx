@@ -150,7 +150,9 @@ export const RoomView = () => {
       id: remoteStreamingPeer.id,
       name: `Screen share: ${remoteStreamingPeer.metadata?.peer?.displayName ?? remoteStreamingPeer.id}`,
       videoTrack: remoteStreamingPeer.screenShareVideoTrack,
-      audioTrack: remoteStreamingPeer.screenShareAudioTrack,
+      audioTrack:
+        remoteStreamingPeer.screenShareAudioTrack ??
+        remoteStreamingPeer.microphoneTrack,
     };
 
     // Top bar shows local camera + other remote cameras (excluding the streaming peer)

@@ -10,9 +10,9 @@ export const RoomHeader = ({ roomId, participantCount }: RoomHeaderProps) => {
     <header className="relative grid gap-3 border-b border-[#48474c]/35 bg-[#131317]/80 px-4 py-3 backdrop-blur-xl md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center lg:px-6">
       <div className="min-w-0">
         <p className="font-body text-xs uppercase tracking-[0.24em] text-[#acaab0]">
-          Neon Nocturne
+          When future comes
         </p>
-        <h1 className="font-headline truncate text-2xl leading-none">Project Sync</h1>
+        <h1 className="font-headline truncate text-2xl leading-none">AIMeet</h1>
       </div>
 
       <div className="flex min-w-0 items-center justify-center">

@@ -51,7 +51,7 @@ export const ChatView = ({ factCheckItems }: ChatViewProps) => {
             );
           })}
 
-          <article className="rounded-xl bg-[#25252b] p-3">
+          {/* <article className="rounded-xl bg-[#25252b] p-3">
             <p className="font-body text-[#fcf8fe]">
               Elena R. <span className="text-[#acaab0]">10:42 AM</span>
             </p>
@@ -68,7 +68,7 @@ export const ChatView = ({ factCheckItems }: ChatViewProps) => {
               Uploaded the latest deck. We should align the ROI narrative
               before client Q&A.
             </p>
-          </article>
+          </article> */}
         </div>
       </section>
     </div>

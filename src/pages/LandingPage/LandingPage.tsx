@@ -50,7 +50,7 @@ export default function LandingPage({ onFishjamIdChange }: LandingPageProps) {
         <div className="space-y-8">
           <header className="space-y-5">
             <p className="font-body text-sm uppercase tracking-[0.24em] text-[#acaab0]">
-              Neon Nocturne
+              When future comes
             </p>
 
             <h1 className="font-headline text-5xl leading-[0.95] text-[#fcf8fe] sm:text-6xl lg:text-7xl">
