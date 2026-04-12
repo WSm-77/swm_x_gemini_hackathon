@@ -1,4 +1,5 @@
 import { usePeers } from "@fishjam-cloud/react-client";
+import { AlertTriangle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -9,12 +10,18 @@ import { CallToolbar } from "./CallToolbar";
 import { RoomHeader } from "./room-view/RoomHeader";
 import { RoomSidebar, type RoomSidebarTab } from "./room-view/RoomSidebar";
 import { VideoStage } from "./room-view/VideoStage";
-import { getVerdictLabel } from "./room-view/factCheckUtils";
 import { useAiNotesFeed } from "./room-view/useAiNotesFeed";
 import { useFactCheckFeed } from "./room-view/useFactCheckFeed";
 import { type CameraTile } from "./room-view/types";
 
 const CAMERAS_PER_PAGE = 4;
+const FACT_CHECK_TOAST_MAX_CHARS = 180;
+
+const toFactCheckPreview = (text: string): string => {
+  const compact = text.replace(/\s+/g, " ").trim();
+  if (compact.length <= FACT_CHECK_TOAST_MAX_CHARS) return compact;
+  return `${compact.slice(0, FACT_CHECK_TOAST_MAX_CHARS - 1)}...`;
+};
 
 export const RoomView = () => {
   const { localPeer, remotePeers } = usePeers<{ displayName?: string }>();
@@ -45,9 +52,17 @@ export const RoomView = () => {
 
       if (item.verdict !== "refuted") return;
 
-      toast(getVerdictLabel(item.verdict), {
+      toast.error("Refuted claim detected", {
         position: "top-center",
-        description: "New fact-check report",
+        description: toFactCheckPreview(item.text),
+        duration: 8000,
+        icon: <AlertTriangle className="h-4 w-4 text-rose-200" />,
+        style: {
+          border: "1px solid rgba(251, 113, 133, 0.45)",
+          background: "rgba(76, 5, 25, 0.92)",
+          color: "#ffe4e6",
+          boxShadow: "0 10px 30px rgba(0, 0, 0, 0.35)",
+        },
       });
     });
 
