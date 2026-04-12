@@ -34,7 +34,7 @@ export const CollaborativeNotesView = () => {
 
       <section className="rounded-3xl border border-[#48474c]/35 bg-[#19191e]/90 p-4 backdrop-blur-xl lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
         <div className="overflow-x-hidden overflow-y-auto lg:min-h-0 lg:flex-1">
-          <InteractiveNotes isLocked={isLocked} />
+          <InteractiveNotes isLocked={!isLocked} />
         </div>
       </section>
     </div>
