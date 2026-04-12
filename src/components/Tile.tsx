@@ -1,4 +1,5 @@
 import { type PeerId, type Track, useVAD } from "@fishjam-cloud/react-client";
+import { AudioLines, Mic, MicOff, VolumeX } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -55,15 +56,35 @@ export function Tile({
           <span className="font-body text-sm">{name}</span>
 
           {isMuted ? (
-            <span title="Muted">🔇</span>
+            <span
+              title="Muted"
+              className="grid h-5 w-5 place-items-center rounded-full bg-rose-500/20 text-rose-300"
+            >
+              <MicOff size={12} />
+            </span>
           ) : (
-            <span title="Unmuted">🔊</span>
+            <span
+              title="Unmuted"
+              className="grid h-5 w-5 place-items-center rounded-full bg-emerald-500/20 text-emerald-300"
+            >
+              <Mic size={12} />
+            </span>
           )}
 
           {isSpeaking ? (
-            <span title="Speaking">🗣</span>
+            <span
+              title="Speaking"
+              className="grid h-5 w-5 place-items-center rounded-full bg-cyan-500/20 text-cyan-300"
+            >
+              <AudioLines size={12} />
+            </span>
           ) : (
-            <span title="Silent">🤐</span>
+            <span
+              title="Silent"
+              className="grid h-5 w-5 place-items-center rounded-full bg-[#2a2a30] text-[#9f9ca6]"
+            >
+              <VolumeX size={12} />
+            </span>
           )}
         </Badge>
       </div>
