@@ -1,8 +1,4 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import {
-  FACTCHECK_SYSTEM_INSTRUCTION,
-  SCRIBE_SYSTEM_INSTRUCTION,
-} from "./systemPrompts";
 import type { GeminiFunctionCall } from "../types";
 
 const PCM_CHUNK_BYTES = 3200;
@@ -11,6 +7,7 @@ const PCM_MIME_TYPE = "audio/pcm;rate=16000";
 type GeminiLiveClientOptions = {
   apiKey: string;
   model: string;
+  systemInstruction: string;
   onFunctionCall: (call: GeminiFunctionCall) => void;
   onModelText?: (text: string) => void;
   onModelAudioChunk?: (chunk: Buffer, mimeType: string) => void;
@@ -78,8 +75,7 @@ export class GeminiLiveClient {
         outputAudioTranscription: {},
         systemInstruction: {
           role: "system",
-          // parts: [{ text: FACTCHECK_SYSTEM_INSTRUCTION }],
-          parts: [{ text: SCRIBE_SYSTEM_INSTRUCTION }],
+          parts: [{ text: this.options.systemInstruction }],
         },
       },
       callbacks: {

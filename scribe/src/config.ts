@@ -16,7 +16,15 @@ const readOptional = (name: string): string | undefined => {
   return value;
 };
 
+const isScribeAgentType = (value: string): value is ScribeAgentType =>
+  value === "scribe" || value === "factChecker";
+
+export type ScribeAgentType = "scribe" | "factChecker";
+
 export type ScribeConfig = {
+  agent: {
+    type: ScribeAgentType;
+  };
   gemini: {
     apiKey: string;
     model: string;
@@ -39,6 +47,13 @@ export const loadConfig = (): ScribeConfig => {
   const geminiApiKey = readRequired("GEMINI_API_KEY");
   const fishjamId = readRequired("FISHJAM_ID");
   const managementToken = readRequired("FISHJAM_MANAGEMENT_TOKEN");
+
+  const agentTypeValue = process.env.SCRIBE_AGENT_TYPE ?? "scribe";
+  if (!isScribeAgentType(agentTypeValue)) {
+    throw new Error(
+      "Environment variable SCRIBE_AGENT_TYPE must be one of: scribe, factChecker",
+    );
+  }
 
   const subscribeMode = process.env.FISHJAM_AGENT_SUBSCRIBE_MODE ?? "auto";
   if (subscribeMode !== "auto" && subscribeMode !== "manual") {
@@ -64,6 +79,9 @@ export const loadConfig = (): ScribeConfig => {
   }
 
   return {
+    agent: {
+      type: agentTypeValue,
+    },
     gemini: {
       apiKey: geminiApiKey,
       model: process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL,

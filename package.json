@@ -11,7 +11,8 @@
     "format": "prettier --write . --ignore-path ./.eslintignore",
     "format:check": "prettier --check . --ignore-path ./.eslintignore",
     "preview": "vite preview",
-    "scribe:dev": "tsx --env-file=.env scribe/src/index.ts"
+    "scribe:dev": "SCRIBE_AGENT_TYPE=scribe SCRIBE_CONTROL_PORT=8787 tsx --env-file=.env scribe/src/index.ts",
+    "fact-checker:dev": "SCRIBE_AGENT_TYPE=factChecker SCRIBE_CONTROL_PORT=8788 tsx --env-file=.env scribe/src/index.ts"
   },
   "dependencies": {
     "@fishjam-cloud/js-server-sdk": "^0.25.1",

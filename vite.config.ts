@@ -4,6 +4,7 @@ import { defineConfig } from "vite";
 import mkcert from "vite-plugin-mkcert";
 
 const scribeServiceUrl = process.env.VITE_SCRIBE_SERVICE_URL ?? "http://localhost:8787";
+const factCheckerServiceUrl = process.env.VITE_FACT_CHECKER_SERVICE_URL ?? "http://localhost:8788";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -21,6 +22,11 @@ export default defineConfig({
       },
       "/ws/notes": {
         target: scribeServiceUrl,
+        changeOrigin: true,
+        ws: true,
+      },
+      "/ws/fact-check": {
+        target: factCheckerServiceUrl,
         changeOrigin: true,
         ws: true,
       },

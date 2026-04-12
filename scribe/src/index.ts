@@ -6,9 +6,10 @@ import { dirname } from "node:path";
 import { FishjamClient, type RoomId } from "@fishjam-cloud/js-server-sdk";
 import WebSocket, { WebSocketServer } from "ws";
 
-import { loadConfig } from "./config";
+import { loadConfig, type ScribeAgentType } from "./config";
 import { FishjamAgentPcmSource } from "./fishjam/FishjamAgentPcmSource";
 import { GeminiLiveClient } from "./gemini/GeminiLiveClient";
+import { getSystemInstructionForAgentType } from "./gemini/systemPrompts";
 import type { SaveNoteItemArgs, SaveNoteItemPayload } from "./types";
 
 type SessionStatus = {
@@ -23,12 +24,19 @@ type JoinFailure = {
 
 const FAILED_ROOM_RETRY_MS = 60_000;
 
+type NotesSocketMessageType = "ai_note_text" | "fact_check_report";
+
 type NotesSocketMessage = {
-  type: "ai_note_text";
+  type: NotesSocketMessageType;
   roomId: string;
   text: string;
   timestamp: string;
 };
+
+const getNotesSocketMessageType = (
+  agentType: ScribeAgentType,
+): NotesSocketMessageType =>
+  agentType === "factChecker" ? "fact_check_report" : "ai_note_text";
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -174,8 +182,11 @@ class ScribeSession {
       fishjamId: string;
       managementToken: string;
       subscribeMode: "auto" | "manual";
+      agentType: ScribeAgentType;
+      notesMessageType: NotesSocketMessageType;
       geminiApiKey: string;
       geminiModel: string;
+      geminiSystemInstruction: string;
       disablePcmStream: boolean;
       modelAudioDumpPath?: string;
       modelAudioDumpStream?: NodeJS.WritableStream;
@@ -192,13 +203,14 @@ class ScribeSession {
     this.gemini = new GeminiLiveClient({
       apiKey: options.geminiApiKey,
       model: options.geminiModel,
+      systemInstruction: options.geminiSystemInstruction,
       onModelText: (text) => {
         const trimmed = text.trim();
         if (trimmed.length === 0) return;
 
-        console.log(`[Gemini text] ${text}`);
+        console.log(`[Gemini ${options.agentType} text] ${text}`);
         options.notesHub.broadcast({
-          type: "ai_note_text",
+          type: options.notesMessageType,
           roomId: options.roomId,
           text: trimmed,
           timestamp: new Date().toISOString(),
@@ -280,8 +292,11 @@ class ScribeSessionManager {
       defaultFishjamId: string;
       managementToken: string;
       subscribeMode: "auto" | "manual";
+      agentType: ScribeAgentType;
+      notesMessageType: NotesSocketMessageType;
       geminiApiKey: string;
       geminiModel: string;
+      geminiSystemInstruction: string;
       disablePcmStream: boolean;
       modelAudioDumpPath?: string;
       modelAudioDumpStream?: NodeJS.WritableStream;
@@ -321,8 +336,11 @@ class ScribeSessionManager {
               fishjamId,
               managementToken: this.options.managementToken,
               subscribeMode: this.options.subscribeMode,
+              agentType: this.options.agentType,
+              notesMessageType: this.options.notesMessageType,
               geminiApiKey: this.options.geminiApiKey,
               geminiModel: this.options.geminiModel,
+              geminiSystemInstruction: this.options.geminiSystemInstruction,
               disablePcmStream: this.options.disablePcmStream,
               modelAudioDumpPath: this.options.modelAudioDumpPath,
               modelAudioDumpStream: this.options.modelAudioDumpStream,
@@ -386,8 +404,11 @@ class ScribeSessionManager {
           fishjamId,
           managementToken: this.options.managementToken,
           subscribeMode: this.options.subscribeMode,
+          agentType: this.options.agentType,
+          notesMessageType: this.options.notesMessageType,
           geminiApiKey: this.options.geminiApiKey,
           geminiModel: this.options.geminiModel,
+          geminiSystemInstruction: this.options.geminiSystemInstruction,
           disablePcmStream: this.options.disablePcmStream,
           modelAudioDumpPath: this.options.modelAudioDumpPath,
           modelAudioDumpStream: this.options.modelAudioDumpStream,
@@ -489,6 +510,10 @@ class ScribeSessionManager {
 
 const run = async (): Promise<void> => {
   const config = loadConfig();
+  const notesMessageType = getNotesSocketMessageType(config.agent.type);
+  const geminiSystemInstruction = getSystemInstructionForAgentType(
+    config.agent.type,
+  );
   const disablePcmStream = process.env.GEMINI_DISABLE_PCM_STREAM === "1";
   const modelAudioDumpPath = process.env.GEMINI_AUDIO_DUMP_PATH;
   const modelAudioDumpEnabled =
@@ -511,8 +536,11 @@ const run = async (): Promise<void> => {
     defaultFishjamId: config.fishjam.fishjamId,
     managementToken: config.fishjam.managementToken,
     subscribeMode: config.fishjam.subscribeMode,
+    agentType: config.agent.type,
+    notesMessageType,
     geminiApiKey: config.gemini.apiKey,
     geminiModel: config.gemini.model,
+    geminiSystemInstruction,
     disablePcmStream,
     modelAudioDumpPath,
     modelAudioDumpStream,
@@ -603,12 +631,21 @@ const run = async (): Promise<void> => {
     server,
     path: "/ws/notes",
   });
-
-  notesWsServer.on("connection", (socket, request) => {
-    const parsedUrl = new URL(request.url ?? "/ws/notes", "http://localhost");
-    const roomId = parsedUrl.searchParams.get("roomId") ?? undefined;
-    notesHub.addClient(socket, roomId);
+  const factCheckWsServer = new WebSocketServer({
+    server,
+    path: "/ws/fact-check",
   });
+
+  const registerWsServer = (wsServer: WebSocketServer, defaultPath: string) => {
+    wsServer.on("connection", (socket, request) => {
+      const parsedUrl = new URL(request.url ?? defaultPath, "http://localhost");
+      const roomId = parsedUrl.searchParams.get("roomId") ?? undefined;
+      notesHub.addClient(socket, roomId);
+    });
+  };
+
+  registerWsServer(notesWsServer, "/ws/notes");
+  registerWsServer(factCheckWsServer, "/ws/fact-check");
 
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
@@ -641,6 +678,9 @@ const run = async (): Promise<void> => {
   console.debug(
     `Scribe notes websocket listening on ws://${config.control.host}:${config.control.port}/ws/notes`,
   );
+  console.debug(
+    `Scribe fact-check websocket listening on ws://${config.control.host}:${config.control.port}/ws/fact-check`,
+  );
   console.debug("Scribe service ready for per-meeting session joins");
   console.debug("Gemini response mode: audio + CLI transcription");
   if (modelAudioDumpEnabled) {
@@ -654,9 +694,14 @@ const run = async (): Promise<void> => {
     await sessionManager.stopActiveSession();
 
     notesHub.closeAll();
-    await new Promise<void>((resolve) => {
-      notesWsServer.close(() => resolve());
-    });
+    await Promise.all([
+      new Promise<void>((resolve) => {
+        notesWsServer.close(() => resolve());
+      }),
+      new Promise<void>((resolve) => {
+        factCheckWsServer.close(() => resolve());
+      }),
+    ]);
 
     await new Promise<void>((resolve) => {
       server.close(() => resolve());
