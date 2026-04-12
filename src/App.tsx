@@ -4,7 +4,7 @@ import { useState } from "react";
 import { BlurProvider } from "./components/BlurToggle";
 import { DEFAULT_FISHJAM_ID } from "./lib/consts";
 import { RoomProvider } from "./context/RoomContext";
-import Router from "./Router";
+import AppRouter from "./router/AppRouter";
 
 function App() {
   const [fishjamId, setFishjamId] = useState<string>(DEFAULT_FISHJAM_ID);
@@ -13,7 +13,7 @@ function App() {
     <FishjamProvider fishjamId={fishjamId}>
       <BlurProvider>
         <RoomProvider>
-          <Router onFishjamIdChange={setFishjamId} />
+          <AppRouter onFishjamIdChange={setFishjamId} />
         </RoomProvider>
       </BlurProvider>
     </FishjamProvider>
