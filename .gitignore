@@ -33,3 +33,6 @@ credentials.json
 
 # Backup files
 *-backup*
+
+# Resources
+resources/*
